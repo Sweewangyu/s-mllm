@@ -1,6 +1,9 @@
 import torch.nn as nn
-
-# copy code from https://github.com/huggingface/peft/blob/2f5360a7da22a236b5ad4c059572fff5321c867c/src/peft/peft_model.py#L617
+import torch
+import logging
+import transformers
+from peft import LoraConfig, get_peft_model
+logger = logging.getLogger(__name__)
 def get_nb_trainable_parameters(model:nn.Module) -> tuple[int, int]:
     r"""
     Returns the number of trainable parameters and the number of all parameters in the model.
@@ -32,7 +35,6 @@ def get_nb_trainable_parameters(model:nn.Module) -> tuple[int, int]:
     return trainable_params, all_param
 
 
-# copy code from https://github.com/huggingface/peft/blob/2f5360a7da22a236b5ad4c059572fff5321c867c/src/peft/peft_model.py#L647
 def print_trainable_parameters(model: nn.Module) -> None:
     """
     Prints the number of trainable parameters in the model.
@@ -49,3 +51,35 @@ def print_trainable_parameters(model: nn.Module) -> None:
     print(
         f"trainable params: {trainable_params:,d} || all params: {all_param:,d} || trainable%: {100 * trainable_params / all_param:.4f}"
     )
+
+# Lora配置
+def setup_lora(model):
+    logger.warning("Loading model with LoRA configuration")
+    config = LoraConfig(
+        r=32,
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+        lora_dropout=0.05,
+        bias="none",
+        task_type="CAUSAL_LM",
+        modules_to_save=["multi_modal_projector"],
+    )
+    return get_peft_model(model, config)
+
+
+# 冻结vision_tower层
+def freeze_vision_tower(model):
+    logger.warning("Freezing vision_tower layers")
+    for param in model.vision_tower.parameters():
+        param.requires_grad = False
+
+
+# 冻结vision_tower和llm层，仅训练投影层
+def freeze_vision_and_llm(model):
+    logger.warning("Freezing vision_tower and LLM layers, only training projector")
+    for param in model.vision_tower.parameters():
+        param.requires_grad = False
+    for param in model.language_model.parameters():
+        param.requires_grad = False
+    for name, param in model.named_parameters():
+        param.requires_grad = "multi_modal_projector" in name
+
