@@ -1,19 +1,12 @@
 from transformers import LlavaProcessor, LlavaForConditionalGeneration
 import torch
-
-
+from PIL import Image
 model_name_or_path = "show_model/model001"  #
-# model_name_or_path = "test_model_copy/model001"  #
 
 llava_processor = LlavaProcessor.from_pretrained(model_name_or_path)
-model = LlavaForConditionalGeneration.from_pretrained(
-    model_name_or_path, device_map="cuda:0", torch_dtype=torch.bfloat16
-)
-
-from PIL import Image
+model = LlavaForConditionalGeneration.from_pretrained(model_name_or_path, device_map="cuda:0", torch_dtype=torch.bfloat16)
 
 prompt_text = "<image>\n这是什么?"
-
 
 messages = [
     {"role": "system", "content": "You are a helpful assistant."},
