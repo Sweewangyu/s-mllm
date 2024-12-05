@@ -1,6 +1,6 @@
 import torch.nn as nn
-import torch
 import logging
+import matplotlib.pyplot as plt
 import transformers
 from peft import LoraConfig, get_peft_model
 logger = logging.getLogger(__name__)
@@ -83,3 +83,15 @@ def freeze_vision_and_llm(model):
     for name, param in model.named_parameters():
         param.requires_grad = "multi_modal_projector" in name
 
+def plot_loss_curve(losses, output_dir):
+    plt.plot(losses, label="Training Loss")
+    plt.xlabel("Steps")
+    plt.ylabel("Loss")
+    plt.title("Training Loss Curve")
+    plt.legend()
+
+    # 保存图像到指定目录
+    loss_plot_path = f"{output_dir}/training_loss_curve.png"
+    plt.savefig(loss_plot_path)
+    plt.close()  # 关闭图像，释放内存
+    print(f"Loss curve saved to: {loss_plot_path}")

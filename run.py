@@ -8,25 +8,17 @@ from transformers import (
 )
 from data import LlavaDataset, TrainLLavaModelCollator
 from util import *
-
+import torch
 logger = logging.getLogger(__name__)
 
 @dataclass
 class Arguments:
-    model_name_or_path: str = field(default="mllm")
+    model_name_or_path: str = field(default="mllm_chinese")
     train_type: str = field(
-        default="use_lora",
-        metadata={
-            "help": "Training types: 'use_lora', 'freeze_vision', 'freeze_vision_and_llm'"
-        },
+        default="freeze_vision_and_llm",
+        metadata={"help": "Training types: 'use_lora', 'freeze_vision', 'freeze_vision_and_llm'"}
     )
     data_path: str = field(default=None, metadata={"help": "Path to the training data."})
-    output_dir: str = field(default="./output", metadata={"help": "Where to save the model."})
-    num_train_epochs: int = field(default=3, metadata={"help": "Number of training epochs."})
-    per_device_train_batch_size: int = field(default=8, metadata={"help": "Batch size per device."})
-    save_steps: int = field(default=500, metadata={"help": "Save checkpoint every X updates."})
-    logging_dir: str = field(default="./logs", metadata={"help": "Directory for logs."})
-    learning_rate: float = field(default=5e-5, metadata={"help": "Learning rate for training."})
 
 # 加载模型和处理器
 def load_model_and_processor(args: Arguments):
@@ -49,32 +41,49 @@ def load_model_and_processor(args: Arguments):
     return model, processor
 
 # 训练过程
+import matplotlib.pyplot as plt
+
+
+# 训练过程
 def train():
-    parser = HfArgumentParser(Arguments)
-    args = parser.parse_args_into_dataclasses()[0]
+    parser = HfArgumentParser((Arguments, TrainingArguments))
+    args, training_args = parser.parse_args_into_dataclasses()
+    print(f"Parsed arguments: {args}")
 
     model, processor = load_model_and_processor(args)
     data_collator = TrainLLavaModelCollator(processor, -100)
     train_dataset = LlavaDataset(args.data_path)
 
-    training_args = TrainingArguments(
-        output_dir=args.output_dir,
-        num_train_epochs=args.num_train_epochs,
-        per_device_train_batch_size=args.per_device_train_batch_size,
-        save_steps=args.save_steps,
-        logging_dir=args.logging_dir,
-        learning_rate=args.learning_rate,
-    )
+    # 定义一个回调函数来记录损失
+    class LossLoggerCallback(transformers.TrainerCallback):
+        def __init__(self):
+            self.losses = []
 
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            if 'loss' in logs:
+                self.losses.append(logs['loss'])
+
+    # 创建LossLoggerCallback实例
+    loss_logger = LossLoggerCallback()
+
+    # 创建Trainer对象
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=None,
         data_collator=data_collator,
+        callbacks=[loss_logger],  # 添加回调
     )
+
+    # 开始训练
     trainer.train()
-    trainer.save_model(output_dir=args.output_dir)
+    trainer.save_model(output_dir=training_args.output_dir)
+
+    # 绘制损失曲线
+    plot_loss_curve(loss_logger.losses)
+
+
 
 # 程序入口
 if __name__ == "__main__":

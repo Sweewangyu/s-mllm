@@ -103,12 +103,10 @@ class TrainLLavaModelCollator:
             "attention_mask": attention_mask
         }
 
-
-
-
 if __name__ == "__main__":
     data_dir ="/home/wangyu/桌面/llava数据集"
 
     llavadataset = LlavaDataset(data_dir)
     print(len(llavadataset))
     print(llavadataset[100])
+
