@@ -27,34 +27,29 @@ class Arguments:
 
 # 加载模型和处理器
 def load_model_and_processor(args: Arguments):
+    # 加载模型时指定设备
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
     model = transformers.LlavaForConditionalGeneration.from_pretrained(
         args.model_name_or_path,
         torch_dtype=torch.bfloat16,
-        low_cpu_mem_usage=True
-    )
-
-    # Enable FlashAttention if the model is using self-attention
-    if isinstance(model, transformers.LlavaForConditionalGeneration):
-        for module in model.modules():
-            if isinstance(module, torch.nn.MultiheadAttention):
-                # Set the attention implementation to use FlashAttention
-                module.attention = flash_attn.flash_attention
-                # Optionally, you can also adjust the dropout, kernel size, etc., if needed
-                module.attention.dropout = 0.0  # Adjust if necessary
+        low_cpu_mem_usage=True,
+        device_map="cuda:0",
+        attn_implementation="flash_attention_2"
+    ).to(device)  # 立即移动到指定设备
 
     processor = transformers.LlavaProcessor.from_pretrained(args.model_name_or_path)
 
     # 根据训练方式配置模型
     if args.train_type == "use_lora":
-        model = setup_lora(model)
+        model = setup_lora(model) # 确保设置 LoRA 后仍在 GPU 上
     elif args.train_type == "freeze_vision":
-        freeze_vision_tower(model)
+        freeze_vision_tower(model) # 确保冻结视觉塔后仍在 GPU 上
     elif args.train_type == "freeze_vision_and_llm":
-        freeze_vision_and_llm(model)
+        freeze_vision_and_llm(model) # 确保冻结视觉和 LLM 后仍在 GPU 上
 
     print_trainable_parameters(model)
     return model, processor
-
 # 训练过程
 def train():
     parser = HfArgumentParser((Arguments, TrainingArguments))
@@ -64,20 +59,13 @@ def train():
     model, processor = load_model_and_processor(args)
     data_collator = TrainLLavaModelCollator(processor, -100)
     train_dataset = LlavaDataset(args.data_path)
+    print(model)
 
-    optimizer = AdamW(model.parameters(), lr=4e-4, weight_decay=0.1)
-    total_steps = compute_total_steps(train_dataset, args)
-    lr_scheduler = custom_lr_scheduler(optimizer, total_steps)
+    optimizer = AdamW(model.parameters(), lr=4e-5, weight_decay=0.1)
+    total_steps = compute_total_steps(train_dataset, training_args)
+    # lr_scheduler = custom_lr_scheduler(optimizer, total_steps)
+    lr_scheduler = cos_lr_scheduler(optimizer, total_steps)
 
-
-    # 定义一个回调函数来记录损失
-    class LossLoggerCallback(transformers.TrainerCallback):
-        def __init__(self):
-            self.losses = []
-
-        def on_log(self, args, state, control, logs=None, **kwargs):
-            if 'loss' in logs:
-                self.losses.append(logs['loss'])
 
     # 创建LossLoggerCallback实例
     loss_logger = LossLoggerCallback()
@@ -101,8 +89,6 @@ def train():
     plot_loss_curve(loss_logger.losses,output_dir=training_args.output_dir)
 
 
-
-# 程序入口
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",

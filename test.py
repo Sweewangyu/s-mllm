@@ -1,12 +1,12 @@
 from transformers import LlavaProcessor, LlavaForConditionalGeneration
 import torch
 from PIL import Image
-model_name_or_path = "show_model/model001"  #
+model_name_or_path = "/home/wangyu/桌面/smllm/mllm_pre/checkpoint-1498"  #
 
 llava_processor = LlavaProcessor.from_pretrained(model_name_or_path)
-model = LlavaForConditionalGeneration.from_pretrained(model_name_or_path, device_map="cuda:0", torch_dtype=torch.bfloat16)
+model = LlavaForConditionalGeneration.from_pretrained(model_name_or_path, device_map="cuda:0")
 
-prompt_text = "<image>\n这是什么?"
+prompt_text = "<image>\nwhat is it"
 
 messages = [
     {"role": "system", "content": "You are a helpful assistant."},
@@ -17,7 +17,7 @@ prompt = llava_processor.tokenizer.apply_chat_template(
 )
 
 
-image_path = "000000039769.jpg"
+image_path = "1.jpg"
 image = Image.open(image_path)
 
 
