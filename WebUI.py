@@ -8,11 +8,9 @@ def load_model(model_name_or_path: str):
     processor = LlavaProcessor.from_pretrained(model_name_or_path)
     return model, processor
 
-
 def inference(text_input, image_input):
     if image_input is None:
         return "Please upload an image."
-
     global model, processor
     text_input += '<image>\n'
     # 处理输入
@@ -33,7 +31,7 @@ def create_gradio_interface():
     image_input = gr.Image(type="filepath", label="Image Input")
     output = gr.Textbox(label="Generated Text")
 
-    # 启动 Gradio 界面
+
     gr.Interface(
         fn=inference,
         inputs=[text_input, image_input],
@@ -44,7 +42,7 @@ def create_gradio_interface():
 
 
 if __name__ == "__main__":
-    model_name_or_path = "/home/wangyu/桌面/smllm/mllm_en_ft/checkpoint-8509"  # 替换为你的模型路径
+    model_name_or_path = "/home/wangyu/桌面/smllm/mllm_en_ft/checkpoint-8509"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, processor = load_model(model_name_or_path)
     model = model.to(device)

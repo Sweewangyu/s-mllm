@@ -30,6 +30,7 @@ def build_qaimage(processor: AutoProcessor, q_text: str, a_text: str, image_path
 class LlavaDataset(Dataset):
     def __init__(self, dataset_dir: str) -> None:
         self.chat_data, self.data_dir = self.build_dataset(dataset_dir)
+        self.flattened_data = self.flatten_conversations()
 
     def build_dataset(self, data_dir: str) -> Tuple[List[Dict], Path]:
         data_dir = Path(data_dir)
@@ -37,16 +38,38 @@ class LlavaDataset(Dataset):
         chat_data = pd.read_json(chat_file).to_dict(orient="records")
         return chat_data, data_dir
 
+    def flatten_conversations(self) -> List[Tuple[str, str, Path]]:
+        """
+        Flatten the conversations into individual question-answer-image samples.
+        """
+        flattened_data = []
+        for item in self.chat_data:
+            image_path = self.data_dir.joinpath(item.get("image"))
+            conversations = item.get("conversations")
+
+            for i in range(0, len(conversations) - 1, 2):  # Iterate over human-GPT pairs
+                if conversations[i].get("from") == "human" and conversations[i + 1].get("from") == "gpt":
+                    human_input = conversations[i].get("value")
+                    chatbot_output = conversations[i + 1].get("value")
+
+                    # Add <image> token if not present
+                    if "<image>" not in human_input:
+                        human_input = f"<image>\n{human_input}"
+
+                    flattened_data.append((human_input, chatbot_output, image_path))
+
+        return flattened_data
+
     def __len__(self):
-        return len(self.chat_data)
+        return len(self.flattened_data)
 
     def __getitem__(self, index) -> Tuple[str, str, Path]:
-        cur_data = self.chat_data[index]
-        conversations = cur_data.get("conversations")
-        human_input = conversations[0].get("value")
-        chatbot_output = conversations[1].get("value")
-        image_path = self.data_dir.joinpath(cur_data.get("image"))
-        return human_input, chatbot_output, image_path
+        """
+        Return a single (human_input, chatbot_output, image_path) triplet.
+        """
+        return self.flattened_data[index]
+
+
 
 class TrainLLavaModelCollator:
     def __init__(self, processor: AutoProcessor, IGNORE_INDEX: int) -> None:
@@ -104,9 +127,9 @@ class TrainLLavaModelCollator:
         }
 
 if __name__ == "__main__":
-    data_dir ="/home/wangyu/桌面/llava数据集"
+    data_dir ="/home/wangyu/桌面/en_llava/en_pre/images"
 
     llavadataset = LlavaDataset(data_dir)
     print(len(llavadataset))
-    print(llavadataset[100])
+    print(llavadataset[0])
 

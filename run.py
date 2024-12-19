@@ -12,7 +12,6 @@ from transformers import (
     HfArgumentParser,
 )
 from data import LlavaDataset, TrainLLavaModelCollator
-import flash_attn
 from util import *
 logger = logging.getLogger(__name__)
 
@@ -35,10 +34,14 @@ def load_model_and_processor(args: Arguments):
         torch_dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
         device_map="cuda:0",
-        attn_implementation="flash_attention_2"
+        #attn_implementation="flash_attention_2"
     ).to(device)  # 立即移动到指定设备
 
-    processor = transformers.LlavaProcessor.from_pretrained(args.model_name_or_path)
+    processor = transformers.LlavaProcessor.from_pretrained(args.model_name_or_path,
+                                                            torch_dtype=torch.bfloat16,
+                                                            device_map="cuda:0",
+                                                            # attn_implementation="flash_attention_2"
+                                                            )
 
     # 根据训练方式配置模型
     if args.train_type == "use_lora":
@@ -61,7 +64,7 @@ def train():
     train_dataset = LlavaDataset(args.data_path)
     print(model)
 
-    optimizer = AdamW(model.parameters(), lr=4e-5, weight_decay=0.1)
+    optimizer = AdamW(model.parameters(), lr=3e-5, weight_decay=0.1)
     total_steps = compute_total_steps(train_dataset, training_args)
     # lr_scheduler = custom_lr_scheduler(optimizer, total_steps)
     lr_scheduler = cos_lr_scheduler(optimizer, total_steps)
