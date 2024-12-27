@@ -68,7 +68,7 @@
 
 ## 测试
 
-![测试图片](https://github.com/Sweewangyu/s-mllm/_resources/blob/master/1.jpg)
+![测试图片](https://github.com/Sweewangyu/s-mllm/blob/master/_resources/1.jpg)
 
 ### mllm_en 的回答：
 > The image features a cluster of white flowers, specifically daisies, growing in a field.
