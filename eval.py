@@ -1,58 +1,55 @@
+# vllm_model.py
+from vllm import LLM, SamplingParams
+from transformers import LlavaProcessor, LlavaForConditionalGeneration
+from transformers import AutoProcessor
 import torch
-from transformers import AutoProcessor, LlavaForConditionalGeneration
-from compassrank import CompassRank
-from datasets import load_dataset
+import os
+import json
+
+def get_completion(prompts, model, tokenizer=None, max_tokens=512, temperature=0.8, top_p=0.95, max_model_len=2048):
+    stop_token_ids = [151329, 151336, 151338]
+    # 创建采样参数。temperature 控制生成文本的多样性，top_p 控制核心采样的概率
+    sampling_params = SamplingParams(temperature=temperature, top_p=top_p, max_tokens=max_tokens,stop_token_ids=stop_token_ids)
+    # 初始化 vLLM 推理引擎
+    llm = LLM(model=model, tokenizer=tokenizer, max_model_len=max_model_len, trust_remote_code=True)
+    outputs = llm.generate(prompts, sampling_params)
+    return outputs
 
 
-# 加载模型和处理器
-def load_model(model_name_or_path: str):
-    model = LlavaForConditionalGeneration.from_pretrained(model_name_or_path)
-    processor = AutoProcessor.from_pretrained(model_name_or_path)
-    return model, processor
-
-
-# 定义推理函数
-def inference(text_input, image_input):
-    # 假设模型支持图像和文本输入
-    inputs = processor(text=text_input, images=image_input, return_tensors="pt", padding=True)
-    with torch.no_grad():
-        outputs = model.generate(**inputs)
-
-    # 假设模型输出是生成的文本
-    generated_text = processor.decode(outputs[0], skip_special_tokens=True)
-    return generated_text
-
-
-# 加载数据集 (以"VECO"为例，你可以换成任何支持的中文数据集)
-def load_data(dataset_name):
-    dataset = load_dataset(dataset_name)
-    return dataset
-
-
-# 使用 CompassRank 评估模型
-def evaluate_with_compassrank(model, processor, dataset_name):
-    # 加载指定的数据集
-    dataset = load_data(dataset_name)
-
-    # 初始化 CompassRank
-    ranker = CompassRank(model, processor)
-
-    # 评估模型在数据集上的表现
-    results = ranker.evaluate(dataset)
-
-    return results
-
-
-# 主函数
 if __name__ == "__main__":
-    model_name_or_path = "your_model_path_or_name_here"  # 替换为你的模型路径或名称
-    model, processor = load_model(model_name_or_path)
+    # 初始化 vLLM 推理引擎
+    model = '/home/wangyu/桌面/mllm权重/mllm_en/mllm_en_ft/llava-v1.5_2b'  # 指定模型路径
+    tokenizer = None
+    # 加载分词器后传入vLLM 模型，但不是必要的。
+    processor = LlavaProcessor.from_pretrained(model,
+                                                torch_dtype=torch.float16,
+                                                device_map="cuda:0",
+                                                 #attn_implementation="flash_attention_2"
+                                                 )
 
-    # 指定要评估的数据集
-    dataset_name = "veco"  # 这里可以替换为其它支持的中文多模态数据集
+    messages = [
+        {"role": "system", "content": "你是一个有用的助手。"},
+        {"role": "user", "content": [
+            {"type": "image_url",
+             "image_url": {
+                 "url": "https://modelscope.oss-cn-beijing.aliyuncs.com/resource/qwen.png"}
+             },
+            {"type": "text", "text": "插图中的文本是什么？"}
+        ]
+         }
+    ]
 
-    # 评估模型
-    results = evaluate_with_compassrank(model, processor, dataset_name)
+    prompt = processor.tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
 
-    # 输出评估结果
-    print(f"Evaluation Results for {dataset_name}: {results}")
+    outputs = get_completion(prompt, model, tokenizer=tokenizer, max_tokens=512, temperature=1, top_p=1,max_model_len=2048)
+
+    # 输出是一个包含 prompt、生成文本和其他信息的 RequestOutput 对象列表。
+    # 打印输出。
+    for output in outputs:
+        prompt = output.prompt
+        generated_text = output.outputs[0].text
+        print(generated_text)

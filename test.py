@@ -1,7 +1,7 @@
 from transformers import LlavaProcessor, LlavaForConditionalGeneration
 import torch
 from PIL import Image
-model_name_or_path = "/home/wangyu/桌面/smllm/mllm_pre/checkpoint-5539"  #
+model_name_or_path = "/home/wangyu/桌面/mllm权重/mllm_ch/mllm_ch_sft"  #
 llava_processor = LlavaProcessor.from_pretrained(model_name_or_path,
                                                 torch_dtype=torch.float16,
                                                 device_map="cuda:0",

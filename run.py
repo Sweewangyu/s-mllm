@@ -1,9 +1,10 @@
 import logging
 import torch
-import transformers
+from transformers import LlavaForConditionalGeneration,LlavaProcessor
 from torch.optim import AdamW
-# from utils.compute_para import *
-# from utils.train_type import *
+from utils.compute_para import *
+from utils.train_type import *
+from utils.lr_scheduler import *
 from dataclasses import dataclass, field
 from transformers import (
     AutoProcessor,
@@ -15,7 +16,6 @@ from data import LlavaDataset, TrainLLavaModelCollator
 from util import *
 logger = logging.getLogger(__name__)
 
-@dataclass
 class Arguments:
     model_name_or_path: str = field(default="mllm_chinese")
     train_type: str = field(
@@ -28,8 +28,7 @@ class Arguments:
 def load_model_and_processor(args: Arguments):
     # 加载模型时指定设备
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(device)
-    model = transformers.LlavaForConditionalGeneration.from_pretrained(
+    model = LlavaForConditionalGeneration.from_pretrained(
         args.model_name_or_path,
         torch_dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
@@ -37,11 +36,11 @@ def load_model_and_processor(args: Arguments):
         #attn_implementation="flash_attention_2"
     ).to(device)  # 立即移动到指定设备
 
-    processor = transformers.LlavaProcessor.from_pretrained(args.model_name_or_path,
-                                                            torch_dtype=torch.bfloat16,
-                                                            device_map="cuda:0",
-                                                            # attn_implementation="flash_attention_2"
-                                                            )
+    processor = LlavaProcessor.from_pretrained(args.model_name_or_path,
+                                                torch_dtype=torch.bfloat16,
+                                                device_map="cuda:0",
+                                                # attn_implementation="flash_attention_2"
+    )
 
     # 根据训练方式配置模型
     if args.train_type == "use_lora":
@@ -81,7 +80,7 @@ def train():
         optimizers=(optimizer, lr_scheduler),
         eval_dataset=None,
         data_collator=data_collator,
-        callbacks=[loss_logger],  # 添加回调
+        callbacks=[loss_logger],
     )
 
     # 开始训练
