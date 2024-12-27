@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 accelerate launch  --config_file accelerate_one_gpu.yaml run.py \
-    --model_name_or_path mllm_pre/checkpoint-5539 \
+    --model_name_or_path /home/wangyu/桌面/mllm权重/mllm_en/mllm \
     --train_type freeze_vision \
     --data_path ../ch_llava/ft \
     --bf16 true \
