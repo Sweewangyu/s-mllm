@@ -19,7 +19,7 @@
 
 ## 1. 模型结构
 
-![模型结构](https://github.com/Sweewangyu/s-mllm/_resources/80284efbdd653c1f2a4f2fc46005193b.png)
+![模型结构](https://github.com/Sweewangyu/s-mllm/blob/master/_resources/80284efbdd653c1f2a4f2fc46005193b.png)
 
 ---
 
@@ -45,10 +45,10 @@
 - 修改 `tran.sh` 中的 `train_type` 为 `freeze_vision_and_llm`。
 
 #### mllm_en 预训练的损失函数：
-![mllm_en_loss](https://github.com/Sweewangyu/s-mllm/_resources/training_loss_curve.png)
+![mllm_en_loss](https://github.com/Sweewangyu/s-mllm/blob/master/_resources/training_loss_curve.png)
 
 #### mllm_ch 预训练的损失函数：
-![mllm_ch_loss](https://github.com/Sweewangyu/s-mllm/_resources/training_loss_curve-1.png)
+![mllm_ch_loss](https://github.com/Sweewangyu/s-mllm/blob/master/_resources/training_loss_curve-1.png)
 
 ---
 
@@ -59,16 +59,16 @@
 - 修改 `tran.sh` 中的 `train_type` 为 `freeze_vision`。
 
 #### mllm_en 微调的损失函数：
-![mllm_en_tuning_loss](https://github.com/Sweewangyu/s-mllm/_resources/training_loss_curve-3.png)
+![mllm_en_tuning_loss](https://github.com/Sweewangyu/s-mllm/blob/master/_resources/training_loss_curve-3.png)
 
 #### mllm_ch 微调的损失函数：
-![mllm_ch_tuning_loss](https://github.com/Sweewangyu/s-mllm/_resources/training_loss_curve-2.png)
+![mllm_ch_tuning_loss](https://github.com/Sweewangyu/s-mllm/blob/master/_resources/training_loss_curve-2.png)
 
 ---
 
 ## 测试
 
-![测试图片](https://github.com/Sweewangyu/s-mllm/_resources/1.jpg)
+![测试图片](https://github.com/Sweewangyu/s-mllm/_resources/blob/master/1.jpg)
 
 ### mllm_en 的回答：
 > The image features a cluster of white flowers, specifically daisies, growing in a field.
