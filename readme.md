@@ -1,9 +1,8 @@
 # LLaVA
 
 ## 0. 准备
-
 - 一张 3090 显卡
-- 百度网盘
+
 
 ### mllm_en：
 - 文本部分使用了 `llama3.2-1b-instruct`
@@ -11,7 +10,7 @@
 
 ### mllm_ch：
 - 文本部分使用了 `qwen2.5-0.5b-instruct`
-- 图像部分使用了 `OFA-Sys/chinese-clip-vit-base-patch16`
+- 图像部分使用了 `chinese-clip-vit-large-patch14-336px`
 
 将下载好的 `mllm_en` 或 `mllm_ch` 文件夹拖入指定目录，并将 `train.sh` 中的 `model_name_or_path` 修改为对应路径。
 
@@ -54,8 +53,7 @@
 
 ### 阶段二：端到端训练
 
-- 冻结 Vision Encoder 的权重，同时更新插值层 `Projection W` 和 LLM 语言模型的权重。
-- 训练过程中考虑 Multimodal Chatbot 和 Science QA 两种典型任务。  
+- 冻结 Vision Encoder 的权重，同时更新插值层 `Projection W` 和 LLM 语言模型的权重。 
 - 修改 `tran.sh` 中的 `train_type` 为 `freeze_vision`。
 
 #### mllm_en 微调的损失函数：
@@ -74,12 +72,17 @@
 > The image features a cluster of white flowers, specifically daisies, growing in a field.
 
 ### mllm_ch 的回答：
-> 一朵白色的雏菊，花瓣展开，中心有黄色的花蕊。
+> 白色的雏菊，花瓣展开，中心有黄色的花蕊。
 
 ---
 
-## 4. Eval
+## 模型权重
 
+- mllm_cn:链接: https://pan.baidu.com/s/1lVu9z1kWWaFxwU3qh4oqTA 提取码: nuqh
+- mllm_en:链接: https://pan.baidu.com/s/1WIwjOaPG_yRg7KAFGB6uTA 提取码: 66yg
+
+## 4. Eval
+- 
 - 部署本地语言模型作为评判 / 选择提取器：
   ```bash
   git clone https://github.com/open-compass/VLMEvalKit.git

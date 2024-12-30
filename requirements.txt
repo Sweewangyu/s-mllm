@@ -1,2 +1,4 @@
 compassrank
 gradio
+transformers
+torch
